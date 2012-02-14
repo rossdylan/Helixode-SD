@@ -4,6 +4,7 @@ Really Really Simple service discovery using multicast.
 It does nothing else.
 
 usage:
+./setup.py install
 
 """On the server providing a service"""
 import hxsd
