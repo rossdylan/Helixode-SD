@@ -1,0 +1,20 @@
+Helixoide Service Discovery
+
+Really Really Simple service discovery using multicast.
+It does nothing else.
+
+usage:
+
+"""On the server providing a service"""
+import hxsd
+provider = hxsd.serviceProvider("multicast-group",port)
+maService = hxsd.service("AWESOME SERVICE", 31337)
+provider.addService(maService)
+provider.start()
+
+"""On the client looking for a service"""
+import hxsd
+finder = hxsd.serviceFinder("multicast-group",port)
+services = finder.search("AWESOME SERVICE")
+print services
+
