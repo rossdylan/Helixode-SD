@@ -37,14 +37,15 @@ class serviceFinder(object):
         Search for services using multicast sends out a request for services
         of the specified name and then waits and gathers responses
         """
-        print "Searching for service '%s'" % serviceName
+        print("Searching for service '%s'" % serviceName)
         self.sock.settimeout(5)
-        self.sock.sendto("|".join(["findservice", serviceName]), self.group)
+        msg = "|".join(("findservice", serviceName))
+        self.sock.sendto(msg.encode('ascii'), self.group)
         servicesFound = []
         while True:
             try:
                 data, server = self.sock.recvfrom(1024)
-                data = data.split("|")
+                data = data.decode('ascii').split("|")
                 cmd = data[0]
                 servicePort = int(data[1])
                 if cmd == "service":
@@ -100,14 +101,15 @@ class serviceProvider(object):
                     data, address = self.sock.recvfrom(1024)
                 except:
                     continue
-                data = data.split("|")
+                data = data.decode('ascii').split("|")
                 if len(data) == 2:
                     cmd = data[0]
                     serviceName = data[1]
                     if cmd == "findservice":
                         if serviceName in self.services:
                             ourServicePort = self.services[serviceName].servicePort
-                            self.sock.sendto("|".join(["service", str(ourServicePort)]), address)
+                            msg = "|".join(("service", str(ourServicePort)))
+                            self.sock.sendto(msg.encode('ascii'), address)
 
 
 def main():
