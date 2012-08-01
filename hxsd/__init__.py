@@ -114,9 +114,13 @@ class serviceProvider(object):
 
 def main():
     import sys
+    if len(sys.argv) == 1:
+        print("Usage: hxsd [provide|search]")
+        sys.exit(1)
+
     if sys.argv[1] == 'provide':
         if len(sys.argv) < 4:
-            print "Usage: hxsd provide [service] [port]"
+            print("Usage: hxsd provide [service] [port]")
             exit()
         derpService = service(sys.argv[2], sys.argv[3])
         provider = serviceProvider('224.3.29.110', 9990)
@@ -124,7 +128,11 @@ def main():
         provider.start()
     elif sys.argv[1] == 'search':
         if len(sys.argv) < 3:
-            print "usage: hxsd search [service]"
+            print("usage: hxsd search [service]")
             exit()
         finder = serviceFinder('224.3.29.110', 9990)
-        print finder.search(sys.argv[2])
+        print(finder.search(sys.argv[2]))
+
+if __name__ == "__main__":
+    main()
+
