@@ -77,14 +77,17 @@ class serviceProvider(object):
         self.sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
         self.services = {}
         self.exit = False
+        self.ended = threading.Event()
 
         self.listener = threading.Thread(target=self.listenerThread)
 
     def start(self):
+        self.listener.setDaemon(True)
         self.listener.start()
 
     def stop(self):
         self.exit = True
+        self.ended.wait()
 
     def addService(self, serv):
         if serv.serviceName not in self.services:
@@ -110,6 +113,7 @@ class serviceProvider(object):
                             ourServicePort = self.services[serviceName].servicePort
                             msg = "|".join(("service", str(ourServicePort)))
                             self.sock.sendto(msg.encode('ascii'), address)
+        self.ended.set()
 
 
 def main():
@@ -126,6 +130,13 @@ def main():
         provider = serviceProvider('224.3.29.110', 9990)
         provider.addService(derpService)
         provider.start()
+        try:
+            while True:
+                time.sleep(500)
+        except KeyboardInterrupt:
+            print "\nShutting things down..."
+            provider.stop()
+
     elif sys.argv[1] == 'search':
         if len(sys.argv) < 3:
             print("usage: hxsd search [service]")
