@@ -37,14 +37,15 @@ class serviceFinder(object):
         Search for services using multicast sends out a request for services
         of the specified name and then waits and gathers responses
         """
-        print "Searching for service '%s'" % serviceName
+        print("Searching for service '%s'" % serviceName)
         self.sock.settimeout(5)
-        self.sock.sendto("|".join(["findservice", serviceName]), self.group)
+        msg = "|".join(("findservice", serviceName))
+        self.sock.sendto(msg.encode('ascii'), self.group)
         servicesFound = []
         while True:
             try:
                 data, server = self.sock.recvfrom(1024)
-                data = data.split("|")
+                data = data.decode('ascii').split("|")
                 cmd = data[0]
                 servicePort = int(data[1])
                 if cmd == "service":
@@ -76,14 +77,17 @@ class serviceProvider(object):
         self.sock.setsockopt(socket.SOL_IP, socket.IP_MULTICAST_LOOP, 1)
         self.services = {}
         self.exit = False
+        self.ended = threading.Event()
 
         self.listener = threading.Thread(target=self.listenerThread)
 
     def start(self):
+        self.listener.setDaemon(True)
         self.listener.start()
 
     def stop(self):
         self.exit = True
+        self.ended.wait()
 
     def addService(self, serv):
         if serv.serviceName not in self.services:
@@ -100,29 +104,46 @@ class serviceProvider(object):
                     data, address = self.sock.recvfrom(1024)
                 except:
                     continue
-                data = data.split("|")
+                data = data.decode('ascii').split("|")
                 if len(data) == 2:
                     cmd = data[0]
                     serviceName = data[1]
                     if cmd == "findservice":
                         if serviceName in self.services:
                             ourServicePort = self.services[serviceName].servicePort
-                            self.sock.sendto("|".join(["service", str(ourServicePort)]), address)
+                            msg = "|".join(("service", str(ourServicePort)))
+                            self.sock.sendto(msg.encode('ascii'), address)
+        self.ended.set()
 
 
 def main():
     import sys
+    if len(sys.argv) == 1:
+        print("Usage: hxsd [provide|search]")
+        sys.exit(1)
+
     if sys.argv[1] == 'provide':
         if len(sys.argv) < 4:
-            print "Usage: hxsd provide [service] [port]"
+            print("Usage: hxsd provide [service] [port]")
             exit()
         derpService = service(sys.argv[2], sys.argv[3])
         provider = serviceProvider('224.3.29.110', 9990)
         provider.addService(derpService)
         provider.start()
+        try:
+            while True:
+                time.sleep(500)
+        except KeyboardInterrupt:
+            print("\nShutting things down...")
+            provider.stop()
+
     elif sys.argv[1] == 'search':
         if len(sys.argv) < 3:
-            print "usage: hxsd search [service]"
+            print("usage: hxsd search [service]")
             exit()
         finder = serviceFinder('224.3.29.110', 9990)
-        print finder.search(sys.argv[2])
+        print(finder.search(sys.argv[2]))
+
+if __name__ == "__main__":
+    main()
+
