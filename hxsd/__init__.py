@@ -134,7 +134,7 @@ def main():
             while True:
                 time.sleep(500)
         except KeyboardInterrupt:
-            print "\nShutting things down..."
+            print("\nShutting things down...")
             provider.stop()
 
     elif sys.argv[1] == 'search':
